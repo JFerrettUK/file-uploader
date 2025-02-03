@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= folder.name %></title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1><%= folder.name %></h1>
+
+    <h2>Create Subfolder</h2>
+    <form action="/create-folder" method="post">
+      <label for="name">Folder Name:</label>
+      <input type="text" id="name" name="name" required />
+      <input type="hidden" name="parentId" value="<%= folder.id %>" />
+      <button type="submit">Create</button>
+    </form>
+
+    <h2>Files</h2>
+    <ul>
+      <% if (folder.files.length === 0) { %>
+      <li>No files in this folder.</li>
+      <% } else { %> <% folder.files.forEach(file => { %>
+      <li>
+        <a href="/files/<%= file.id %>"><%= file.filename %></a>
+      </li>
+      <% }); %> <% } %>
+    </ul>
+
+    <h2>Subfolders</h2>
+    <ul>
+      <% if (folder.children.length === 0) { %>
+      <li>No subfolders yet.</li>
+      <% } else { %> <% folder.children.forEach(child => { %>
+      <li>
+        <a href="/folders/<%= child.id %>"><%= child.name %></a>
+        <form
+          action="/folders/<%= child.id %>?_method=DELETE"
+          method="post"
+          style="display: inline"
+        >
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+      <% }); %> <% } %>
+    </ul>
+    <br />
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="folderId" value="<%= folder.id %>" />
+      <div>
+        <label for="file">Choose a file:</label>
+        <input type="file" id="file" name="file" required />
+      </div>
+      <div>
+        <button type="submit">Upload</button>
+      </div>
+    </form>
+  </body>
+</html>

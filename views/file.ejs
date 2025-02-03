@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>File Details</title>
+  </head>
+  <body>
+    <h1>File Details</h1>
+    <p>Name: <%= file.filename %></p>
+    <p>Size: <%= file.size %> bytes</p>
+    <p>Uploaded on: <%= file.createdAt.toLocaleString() %></p>
+
+    <a href="/download/<%= file.id %>">Download</a>
+  </body>
+</html>

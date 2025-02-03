@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>File Uploader</title>
+  </head>
+  <body>
+    <% if (isAuthenticated) { %>
+    <h1>Hello, <%= user.email %>!</h1>
+    <form method="post" action="/logout">
+      <button type="submit">Logout</button>
+    </form>
+    <br />
+    <a href="/upload-form">Upload a File</a>
+    <br />
+    <a href="/folders">View Folders</a>
+    <% } else { %>
+    <h1>Hello from File Uploader!</h1>
+    <a href="/login">Login</a>
+    <% } %>
+  </body>
+</html>

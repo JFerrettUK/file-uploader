@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Your Folders</title>
+  </head>
+  <body>
+    <h1>Your Folders</h1>
+
+    <h2>Create New Folder</h2>
+    <form action="/create-folder" method="post">
+      <label for="name">Folder Name:</label>
+      <input type="text" id="name" name="name" required />
+      <button type="submit">Create</button>
+    </form>
+
+    <h2>Your Folders</h2>
+    <ul>
+      <% if (folders.length === 0) { %>
+      <li>No folders yet.</li>
+      <% } else { %> <% folders.forEach(folder => { %>
+      <li>
+        <a href="/folders/<%= folder.id %>"><%= folder.name %></a>
+        <form
+          action="/folders/<%= folder.id %>?_method=DELETE"
+          method="post"
+          style="display: inline"
+        >
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+      <% }); %> <% } %>
+    </ul>
+  </body>
+</html>
