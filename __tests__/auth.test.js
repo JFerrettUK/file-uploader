@@ -42,7 +42,7 @@ describe("Authentication Routes", () => {
         .send({ email: "testuser@example.com", password: "testpassword" });
 
       expect(res.statusCode).toEqual(400); // Expect error due to duplicate email
-      expect(res.text).toContain("Email already exists"); // Check for error message
+      expect(res.text).toContain("Email already exists."); // Check for error message
     });
   });
 
@@ -62,7 +62,7 @@ describe("Authentication Routes", () => {
         .send({ email: "testuser@example.com", password: "wrongpassword" });
 
       expect(res.statusCode).toEqual(401); // Expect unauthorized
-      expect(res.text).toContain("Incorrect password");
+      expect(res.text).toContain("Incorrect password.");
     });
   });
 

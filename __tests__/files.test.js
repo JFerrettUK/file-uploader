@@ -36,8 +36,11 @@ describe("File Routes", () => {
       where: { userId: testUser.id },
     });
     for (const file of files) {
+      const filePath = path.join(__dirname, "../", file.filepath);
       try {
-        fs.unlinkSync(path.join(__dirname, "../", file.filepath));
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       } catch (err) {
         console.error(
           `Error deleting file ${file.filepath}: ${
@@ -115,7 +118,7 @@ describe("File Routes", () => {
 
       expect(res.statusCode).toEqual(200);
       expect(res.header["content-type"]).toContain("text/plain");
-      expect(res.body.toString()).toEqual(testFileContent);
+      expect(res.text).toEqual(testFileContent);
 
       // Clean up the created file
       fs.unlinkSync(testFilePath);
