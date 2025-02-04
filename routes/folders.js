@@ -42,9 +42,16 @@ router.get("/folders", ensureAuthenticated, async (req, res) => {
         userId: req.user.id,
         parentId: null, // Get only root folders
       },
+      include: {
+        children: true, // Include subfolders
+      },
     });
 
-    res.render("folders", { folders });
+    res.render("folders", {
+      folders,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Error fetching folders.");
@@ -73,7 +80,11 @@ router.get("/folders/:folderId", ensureAuthenticated, async (req, res) => {
       return res.status(403).send("Unauthorized");
     }
 
-    res.render("folder", { folder });
+    res.render("folder", {
+      folder,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Error fetching folder.");

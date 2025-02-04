@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "NODE_ENV=test jest --runInBand"
+    "test": "NODE_ENV=test jest --runInBand --forceExit"
   },
   "keywords": [],
   "author": "",

@@ -59,7 +59,7 @@ describe("File Routes", () => {
     it("should upload a file successfully", async () => {
       const res = await agent
         .post("/upload")
-        .attach("file", "__tests__/test-files/test-upload.txt");
+        .attach("file", path.join(__dirname, "/test-files/test-upload.txt"));
 
       expect(res.statusCode).toEqual(200);
       expect(res.text).toContain("File uploaded successfully!");

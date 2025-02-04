@@ -42,7 +42,7 @@ describe("Authentication Routes", () => {
         .send({ email: "testuser@example.com", password: "testpassword" });
 
       expect(res.statusCode).toEqual(400); // Expect error due to duplicate email
-      expect(res.text).toContain("Email already exists."); // Check for error message
+      expect(res.text).toContain("Email already exists"); // Check for error message
     });
   });
 

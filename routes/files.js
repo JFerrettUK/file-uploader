@@ -29,7 +29,10 @@ function ensureAuthenticated(req, res, next) {
 
 // --- Upload Form Route (GET) ---
 router.get("/upload-form", ensureAuthenticated, (req, res) => {
-  res.render("upload");
+  res.render("upload", {
+    isAuthenticated: req.isAuthenticated(),
+    user: req.user,
+  });
 });
 
 // --- Upload Route (POST) ---
@@ -75,7 +78,11 @@ router.get("/files/:fileId", ensureAuthenticated, async (req, res) => {
       return res.status(403).send("Unauthorized");
     }
 
-    res.render("file", { file });
+    res.render("file", {
+      file,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Error fetching file details.");
