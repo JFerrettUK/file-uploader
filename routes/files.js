@@ -53,7 +53,8 @@ router.post(
         },
       });
 
-      res.send("File uploaded successfully!");
+      // Redirect to the folders page after successful upload
+      res.redirect("/folders"); // Or redirect to a specific folder if needed
     } catch (error) {
       console.error(error);
       res.status(500).send("Error uploading file.");

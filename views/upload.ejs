@@ -1,27 +1,19 @@
 <%- include('partials/header') %>
 
-<h1>Register</h1>
+<h2>Upload a File</h2>
 
-<% if (typeof error !== 'undefined') { %>
-<p class="alert alert-danger"><%= error %></p>
-<% } %>
-
-<form action="/register" method="post">
+<form action="/upload" method="post" enctype="multipart/form-data">
   <div class="form-group">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" class="form-control" required />
-  </div>
-  <div class="form-group">
-    <label for="password">Password:</label>
+    <label for="file">Choose a file:</label>
     <input
-      type="password"
-      id="password"
-      name="password"
-      class="form-control"
+      type="file"
+      id="file"
+      name="file"
+      class="form-control-file"
       required
     />
   </div>
-  <button type="submit" class="btn btn-primary">Register</button>
+  <button type="submit" class="btn btn-primary">Upload</button>
 </form>
 
 <%- include('partials/footer') %>
