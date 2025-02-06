@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../prisma");
 const bcrypt = require("bcrypt");
-const cloudinary = require("cloudinary").v2;
+const cloudinary = require("cloudinary").v2; // Import Cloudinary
 
 describe("File Routes", () => {
   let agent;
@@ -36,18 +36,18 @@ describe("File Routes", () => {
     const files = await prisma.file.findMany({
       where: { userId: testUser.id },
     });
+    // NO LONGER DELETE LOCAL FILES.  Delete from Cloudinary:
     for (const file of files) {
-      const filePath = path.join(__dirname, "../", file.filepath);
       try {
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        const publicId = file.filepath.match(/\/([^\/]+)\.[a-z]+$/i)[1];
+        if (publicId) {
+          // Important check!
+          await cloudinary.uploader.destroy(`file-uploader/${publicId}`, {
+            resource_type: "raw",
+          });
         }
-      } catch (err) {
-        console.error(
-          `Error deleting file ${file.filepath}: ${
-            err.message || "Unknown error"
-          }`
-        );
+      } catch (cloudinaryError) {
+        console.error("Error deleting file from Cloudinary:", cloudinaryError);
       }
     }
     await prisma.file.deleteMany({});
@@ -57,101 +57,86 @@ describe("File Routes", () => {
   });
 
   describe("POST /upload", () => {
-    it("should upload a file successfully", async () => {
+    it("should upload a file successfully to Cloudinary", async () => {
       const res = await agent
         .post("/upload")
-        .attach("file", path.join(__dirname, "test-files", "test-upload.txt"));
+        .attach("file", path.join(__dirname, "test-files", "test-upload.txt")); // Use path.join
 
       expect(res.statusCode).toEqual(200);
       expect(res.text).toContain("File uploaded successfully!");
 
-      // Verify file creation in database
+      // Verify file creation in database (and that it's a Cloudinary URL)
       const uploadedFile = await prisma.file.findFirst({
         where: { userId: testUser.id },
       });
       expect(uploadedFile).not.toBeNull();
       expect(uploadedFile.filename).toEqual("test-upload.txt");
+      expect(uploadedFile.filepath).toMatch(/^https:\/\/res\.cloudinary\.com/); // Check for Cloudinary URL
 
-      // File exists on the file system check removed
+      // DO NOT check for local file existence.  We expect it to be deleted.
     });
   });
 
   describe("GET /files/:fileId", () => {
     it("should get file details", async () => {
-      // Create a file
-      const file = await prisma.file.create({
-        data: {
-          filename: "test-file.txt",
-          filepath: "uploads/test-file.txt", // Provide a valid path
-          mimetype: "text/plain",
-          size: 1024,
-          userId: testUser.id,
-        },
-      });
-
-      const res = await agent.get(`/files/${file.id}`);
-
-      expect(res.statusCode).toEqual(200);
-      expect(res.text).toContain("test-file.txt"); // Check for file name
-    });
-  });
-
-  describe("GET /download/:fileId", () => {
-    it("should download a file", async () => {
-      // Create a file for testing
-      const testFilePath = path.join(__dirname, "../uploads/test-download.txt");
-      const testFileContent = "This is a test file for download.";
-      fs.writeFileSync(testFilePath, testFileContent);
-
-      const file = await prisma.file.create({
-        data: {
-          filename: "test-download.txt",
-          filepath: "uploads/test-download.txt", // Provide a valid path
-          mimetype: "text/plain",
-          size: testFileContent.length,
-          userId: testUser.id,
-        },
-      });
-
-      const res = await agent.get(`/download/${file.id}`);
-
-      expect(res.statusCode).toEqual(200);
-      expect(res.header["content-type"]).toContain("text/plain");
-      expect(res.text).toEqual(testFileContent);
-
-      // Clean up the created file
-      fs.unlinkSync(testFilePath);
-    });
-  });
-
-  describe("Cloudinary Integration", () => {
-    it("should upload a file to Cloudinary and save URL in the database", async () => {
-      const res = await agent
+      // Create a file (upload to Cloudinary first)
+      const uploadRes = await agent
         .post("/upload")
-        .attach("file", path.join(__dirname, "/test-files/test-upload.txt"));
+        .attach("file", path.join(__dirname, "test-files", "test-upload.txt"));
+      expect(uploadRes.statusCode).toBe(200);
 
-      expect(res.statusCode).toEqual(200);
-      expect(res.text).toContain("File uploaded successfully!");
-
-      // Verify file creation in database
       const uploadedFile = await prisma.file.findFirst({
         where: { userId: testUser.id, filename: "test-upload.txt" },
       });
 
-      expect(uploadedFile).not.toBeNull();
-      expect(uploadedFile.filepath).toContain("cloudinary.com"); // Check for Cloudinary URL
+      const res = await agent.get(`/files/${uploadedFile.id}`);
 
-      // Optionally, try to delete the file from Cloudinary to test that part
-      try {
-        const publicId = uploadedFile.filepath.match(/\/([^\/]+)\.[a-z]+$/i)[1];
-        const deleteResult = await cloudinary.uploader.destroy(
-          `file-uploader/${publicId}`,
-          { resource_type: "raw" }
-        );
-        console.log("Cloudinary delete result:", deleteResult);
-      } catch (deleteError) {
-        console.error("Error deleting from Cloudinary:", deleteError);
-      }
+      expect(res.statusCode).toEqual(200);
+      expect(res.text).toContain("test-upload.txt"); // Check for file name
+    });
+  });
+
+  describe("GET /download/:fileId", () => {
+    it("should redirect to the Cloudinary URL", async () => {
+      // Changed test description
+      // Create a file (upload to Cloudinary first)
+      const uploadRes = await agent
+        .post("/upload")
+        .attach("file", path.join(__dirname, "test-files", "test-upload.txt"));
+      expect(uploadRes.statusCode).toBe(200);
+      const uploadedFile = await prisma.file.findFirst({
+        where: { userId: testUser.id, filename: "test-upload.txt" },
+      });
+
+      const res = await agent.get(`/download/${uploadedFile.id}`);
+
+      expect(res.statusCode).toEqual(302); // Expect a redirect
+      expect(res.header.location).toBe(uploadedFile.filepath); // Check redirect URL
+    });
+  });
+
+  describe("DELETE /files/:fileId", () => {
+    // NEW TEST SUITE
+    it("should delete a file and remove it from Cloudinary", async () => {
+      // Create a file (upload to Cloudinary first)
+      const uploadRes = await agent
+        .post("/upload")
+        .attach("file", path.join(__dirname, "test-files", "test-upload.txt"));
+      expect(uploadRes.statusCode).toBe(200);
+
+      const uploadedFile = await prisma.file.findFirst({
+        where: { userId: testUser.id, filename: "test-upload.txt" },
+      });
+
+      const res = await agent.delete(`/files/${uploadedFile.id}`);
+      expect(res.statusCode).toEqual(302); // Expect redirect
+      expect(res.headers.location).toEqual("/folders"); // Redirect to folders
+
+      // Verify deletion from database
+      const deletedFile = await prisma.file.findUnique({
+        where: { id: uploadedFile.id },
+      });
+      expect(deletedFile).toBeNull();
     });
   });
 });

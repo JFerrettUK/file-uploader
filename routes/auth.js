@@ -19,13 +19,18 @@ router.post("/register", async (req, res) => {
     if (!email || !password) {
       return res.status(400).render("register", {
         error: "Email and password are required.",
+        isAuthenticated: req.isAuthenticated(),
+        user: req.user,
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword },
+      data: {
+        email,
+        password: hashedPassword,
+      },
     });
 
     req.login(newUser, (err) => {
@@ -40,10 +45,11 @@ router.post("/register", async (req, res) => {
       return res.redirect("/");
     });
   } catch (error) {
-    // Remove or conditionally log the error
+    // Only log the full error in development/test
     if (process.env.NODE_ENV !== "test") {
       console.error(error);
     }
+
     if (error.code === "P2002") {
       return res.status(400).render("register", {
         error: "Email already exists.",

@@ -1,6 +1,7 @@
 const express = require("express");
 const prisma = require("../prisma");
 const router = express.Router();
+const cloudinary = require("../lib/cloudinary"); // Import Cloudinary
 
 // --- Authentication Middleware ---
 function ensureAuthenticated(req, res, next) {
@@ -128,7 +129,7 @@ router.delete("/folders/:folderId", ensureAuthenticated, async (req, res) => {
 
     const folder = await prisma.folder.findUnique({
       where: { id: folderId },
-      include: { files: true }, // Include associated files
+      include: { files: true }, // Include associated files!
     });
 
     if (!folder || folder.userId !== req.user.id) {
@@ -144,6 +145,7 @@ router.delete("/folders/:folderId", ensureAuthenticated, async (req, res) => {
         });
       } catch (cloudinaryError) {
         console.error("Error deleting file from Cloudinary:", cloudinaryError);
+        //  Decide on error handling: continue or stop?
       }
     }
 

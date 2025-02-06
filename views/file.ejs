@@ -5,6 +5,16 @@
 <p>Size: <%= file.size %> bytes</p>
 <p>Uploaded on: <%= file.createdAt.toLocaleString() %></p>
 
-<a href="/download/<%= file.id %>" class="btn btn-primary">Download</a>
+<a href="<%= file.filepath %>" class="btn btn-primary" target="_blank"
+  >Download</a
+>
+
+<form
+  action="/files/<%= file.id %>?_method=DELETE"
+  method="post"
+  style="display: inline"
+>
+  <button type="submit" class="btn btn-danger">Delete File</button>
+</form>
 
 <%- include('partials/footer') %>

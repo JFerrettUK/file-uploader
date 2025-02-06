@@ -4,7 +4,7 @@ const path = require("path");
 const prisma = require("../prisma");
 const router = express.Router();
 const cloudinary = require("../lib/cloudinary"); // Import Cloudinary config
-const fs = require("fs"); // Import the fs module
+const fs = require("fs");
 
 // --- Multer Configuration ---
 const storage = multer.diskStorage({
@@ -37,6 +37,7 @@ router.get("/upload-form", ensureAuthenticated, (req, res) => {
   });
 });
 
+// --- Upload Route (POST) ---
 router.post(
   "/upload",
   ensureAuthenticated,
@@ -45,25 +46,26 @@ router.post(
     try {
       // 1. Upload to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "file-uploader",
-        resource_type: "raw", // Make sure this is set
+        folder: "file-uploader", // Optional: Set a folder
+        resource_type: "raw", // Important for non-image/video
       });
       console.log("Cloudinary upload result:", result);
 
-      // 2. Get the secure URL
+      // 2. Get secure URL
       const fileUrl = result.secure_url;
 
       // 3. Save to database
       const file = await prisma.file.create({
         data: {
           filename: req.file.originalname,
-          filepath: fileUrl, // Store the Cloudinary URL
+          filepath: fileUrl, // Store Cloudinary URL
           mimetype: req.file.mimetype,
           size: req.file.size,
           userId: req.user.id,
           folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
         },
       });
+
       // 4. Delete temporary file
       fs.unlinkSync(req.file.path);
 
@@ -74,6 +76,7 @@ router.post(
     }
   }
 );
+
 // --- File Details Route ---
 router.get("/files/:fileId", ensureAuthenticated, async (req, res) => {
   try {
@@ -114,15 +117,47 @@ router.get("/download/:fileId", ensureAuthenticated, async (req, res) => {
       return res.status(404).send("File not found or unauthorized");
     }
 
-    res.download(file.filepath, file.filename, (err) => {
-      if (err) {
-        console.error("Error downloading file:", err);
-        res.status(500).send("Error downloading file.");
-      }
-    });
+    // Redirect directly to Cloudinary
+    res.redirect(file.filepath);
   } catch (error) {
     console.error(error);
     res.status(500).send("Error processing download request.");
+  }
+});
+
+// --- Delete a file ---
+router.delete("/files/:fileId", ensureAuthenticated, async (req, res) => {
+  try {
+    const fileId = parseInt(req.params.fileId);
+
+    // Check if file exists and belongs to current user
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file || file.userId !== req.user.id) {
+      return res.status(404).send("File not found or unauthorized");
+    }
+
+    // Extract public ID from Cloudinary URL
+    const publicId = file.filepath.match(/\/([^\/]+)\.[a-z]+$/i)[1];
+
+    // Delete the file from Cloudinary
+    if (publicId) {
+      await cloudinary.uploader.destroy(`file-uploader/${publicId}`, {
+        resource_type: "raw",
+      });
+    }
+
+    // Delete file from database
+    await prisma.file.delete({
+      where: { id: fileId },
+    });
+
+    res.redirect("/folders"); // Redirect
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error deleting file.");
   }
 });
 
