@@ -1,22 +1,33 @@
 <%- include('partials/header') %>
 
-<h1>Your Folders</h1>
+<h1 class="mb-4">Your Folders</h1>
 
-<h2>Create New Folder</h2>
-<form action="/create-folder" method="post">
-  <div class="form-group">
-    <label for="name">Folder Name:</label>
-    <input type="text" id="name" name="name" class="form-control" required />
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="card-title">Create New Folder</h2>
+    <form action="/create-folder" method="post">
+      <div class="form-group">
+        <label for="name">Folder Name:</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          class="form-control"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Create</button>
+    </form>
   </div>
-  <button type="submit" class="btn btn-primary">Create</button>
-</form>
+</div>
 
 <h2>Your Folders</h2>
+<% if (folders.length === 0) { %>
+<p>No folders yet.</p>
+<% } else { %>
 <ul class="list-group">
-  <% if (folders.length === 0) { %>
-  <li class="list-group-item">No folders yet.</li>
-  <% } else { %> <% folders.forEach(folder => { %>
-  <li class="list-group-item">
+  <% folders.forEach(folder => { %>
+  <li class="list-group-item d-flex justify-content-between align-items-center">
     <a href="/folders/<%= folder.id %>"><%= folder.name %></a>
     <form
       action="/folders/<%= folder.id %>?_method=DELETE"
@@ -26,7 +37,6 @@
       <button type="submit" class="btn btn-danger btn-sm">Delete</button>
     </form>
   </li>
-  <% }); %> <% } %>
+  <% }); %>
 </ul>
-
-<%- include('partials/footer') %>
+<% } %> <%- include('partials/footer') %>

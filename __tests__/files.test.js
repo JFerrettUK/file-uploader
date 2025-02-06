@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../prisma");
 const bcrypt = require("bcrypt");
+const cloudinary = require("cloudinary").v2;
 
 describe("File Routes", () => {
   let agent;
@@ -59,7 +60,7 @@ describe("File Routes", () => {
     it("should upload a file successfully", async () => {
       const res = await agent
         .post("/upload")
-        .attach("file", path.join(__dirname, "/test-files/test-upload.txt"));
+        .attach("file", path.join(__dirname, "test-files", "test-upload.txt"));
 
       expect(res.statusCode).toEqual(200);
       expect(res.text).toContain("File uploaded successfully!");
@@ -71,9 +72,7 @@ describe("File Routes", () => {
       expect(uploadedFile).not.toBeNull();
       expect(uploadedFile.filename).toEqual("test-upload.txt");
 
-      // Verify that the file exists on the file system
-      const filePath = path.join(__dirname, "../", uploadedFile.filepath);
-      expect(fs.existsSync(filePath)).toBe(true);
+      // File exists on the file system check removed
     });
   });
 
@@ -122,6 +121,37 @@ describe("File Routes", () => {
 
       // Clean up the created file
       fs.unlinkSync(testFilePath);
+    });
+  });
+
+  describe("Cloudinary Integration", () => {
+    it("should upload a file to Cloudinary and save URL in the database", async () => {
+      const res = await agent
+        .post("/upload")
+        .attach("file", path.join(__dirname, "/test-files/test-upload.txt"));
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.text).toContain("File uploaded successfully!");
+
+      // Verify file creation in database
+      const uploadedFile = await prisma.file.findFirst({
+        where: { userId: testUser.id, filename: "test-upload.txt" },
+      });
+
+      expect(uploadedFile).not.toBeNull();
+      expect(uploadedFile.filepath).toContain("cloudinary.com"); // Check for Cloudinary URL
+
+      // Optionally, try to delete the file from Cloudinary to test that part
+      try {
+        const publicId = uploadedFile.filepath.match(/\/([^\/]+)\.[a-z]+$/i)[1];
+        const deleteResult = await cloudinary.uploader.destroy(
+          `file-uploader/${publicId}`,
+          { resource_type: "raw" }
+        );
+        console.log("Cloudinary delete result:", deleteResult);
+      } catch (deleteError) {
+        console.error("Error deleting from Cloudinary:", deleteError);
+      }
     });
   });
 });

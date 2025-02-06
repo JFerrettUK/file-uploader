@@ -3,6 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const prisma = require("../prisma");
 const router = express.Router();
+const cloudinary = require("../lib/cloudinary"); // Import Cloudinary config
+const fs = require("fs"); // Import the fs module
 
 // --- Multer Configuration ---
 const storage = multer.diskStorage({
@@ -35,33 +37,43 @@ router.get("/upload-form", ensureAuthenticated, (req, res) => {
   });
 });
 
-// --- Upload Route (POST) ---
 router.post(
   "/upload",
   ensureAuthenticated,
   upload.single("file"),
   async (req, res) => {
     try {
+      // 1. Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "file-uploader",
+        resource_type: "raw", // Make sure this is set
+      });
+      console.log("Cloudinary upload result:", result);
+
+      // 2. Get the secure URL
+      const fileUrl = result.secure_url;
+
+      // 3. Save to database
       const file = await prisma.file.create({
         data: {
           filename: req.file.originalname,
-          filepath: req.file.path,
+          filepath: fileUrl, // Store the Cloudinary URL
           mimetype: req.file.mimetype,
           size: req.file.size,
           userId: req.user.id,
           folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
         },
       });
+      // 4. Delete temporary file
+      fs.unlinkSync(req.file.path);
 
-      // Redirect to the folders page after successful upload
-      res.redirect("/folders"); // Or redirect to a specific folder if needed
+      res.send("File uploaded successfully!");
     } catch (error) {
       console.error(error);
       res.status(500).send("Error uploading file.");
     }
   }
 );
-
 // --- File Details Route ---
 router.get("/files/:fileId", ensureAuthenticated, async (req, res) => {
   try {
