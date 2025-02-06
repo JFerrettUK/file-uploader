@@ -128,15 +128,26 @@ router.delete("/folders/:folderId", ensureAuthenticated, async (req, res) => {
 
     const folder = await prisma.folder.findUnique({
       where: { id: folderId },
+      include: { files: true }, // Include associated files
     });
 
-    if (!folder) {
-      return res.status(404).send("Folder not found");
-    }
-    if (folder.userId !== req.user.id) {
-      return res.status(403).send("Unauthorized");
+    if (!folder || folder.userId !== req.user.id) {
+      return res.status(404).send("Folder not found or unauthorized");
     }
 
+    // Delete files associated with the folder from Cloudinary
+    for (const file of folder.files) {
+      try {
+        const publicId = file.filepath.match(/\/([^\/]+)\.[a-z]+$/i)[1];
+        await cloudinary.uploader.destroy(`file-uploader/${publicId}`, {
+          resource_type: "raw", // Use correct resource_type
+        });
+      } catch (cloudinaryError) {
+        console.error("Error deleting file from Cloudinary:", cloudinaryError);
+      }
+    }
+
+    // Delete the folder (and its files, due to the CASCADE) from the database
     await prisma.folder.delete({
       where: { id: folderId },
     });
