@@ -1,44 +1,123 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Uploader</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
     <style>
-        body { padding-top: 70px; /* Adjust for fixed navbar */ }
+      body {
+        padding-top: 60px; /* Adjust for fixed navbar */
+        background-color: #121212; /* Dark background */
+        color: #eee; /* Light text */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .navbar-brand {
+        font-weight: bold;
+      }
+      .btn-primary,
+      a.btn-primary {
+        /* Consistent button styling */
+        background-color: #007bff;
+        border-color: #007bff;
+      }
+      .btn-primary:hover,
+      a.btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+      }
+      .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+      }
+      .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+      }
+      .alert-danger {
+        /* For error messages */
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+      }
+      .card {
+        /* Styling for cards */
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+      }
+      .card-title {
+        color: #eee;
+      }
+      .list-group-item {
+        background-color: #292929;
+        border-color: #444;
+        color: #eee;
+      }
+      .list-group-item a {
+        color: #007bff; /* Link color within list items */
+      }
+      .list-group-item a:hover {
+        color: #0056b3; /* Hover color */
+      }
+      .form-control,
+      .form-control-file {
+        background-color: #333;
+        color: #eee;
+        border-color: #555;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <a class="navbar-brand" href="/">File Uploader</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <% if (isAuthenticated) { %>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/upload-form">Upload</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/folders">Folders</a>
-                    </li>
-                    <li class="nav-item">
-                        <form action="/logout" method="post" class="form-inline">
-                            <button type="submit" class="btn btn-link nav-link">Logout</button>
-                        </form>
-                    </li>
-                <% } else { %>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register">Register</a>
-                    </li>
-                <% } %>
-            </ul>
-        </div>
+      <a class="navbar-brand" href="/">File Uploader</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <% if (isAuthenticated) { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/upload-form">Upload</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/folders">Folders</a>
+          </li>
+          <li class="nav-item">
+            <form action="/logout" method="post" style="display: inline">
+              <button
+                type="submit"
+                class="btn btn-link nav-link"
+                style="color: rgba(255, 255, 255, 0.5)"
+              >
+                Logout
+              </button>
+            </form>
+          </li>
+          <% } else { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/register">Register</a>
+          </li>
+          <% } %>
+        </ul>
+      </div>
     </nav>
 
-    <div class="container mt-4"> 
+    <div class="container mt-4"></div>
   </body>
 </html>

@@ -1,8 +1,18 @@
 <%- include('partials/header') %>
-
-<h1>
-  <% if (isAuthenticated) { %> Hello, <%= user.email %>! <% } else { %> Hello
-  from File Uploader! <% } %>
-</h1>
-
-<%- include('partials/footer') %>
+<div class="jumbotron jumbotron-fluid bg-dark text-light">
+  <div class="container">
+    <h1 class="display-4">Your Files, Anywhere, Anytime</h1>
+    <p class="lead">
+      Securely store and access your important files from any device. Simple,
+      fast, and reliable.
+    </p>
+    <% if (!isAuthenticated) { %>
+    <a href="/register" class="btn btn-primary btn-lg">Get Started</a>
+    <% } %>
+  </div>
+</div>
+<div class="container">
+  <% if (isAuthenticated) { %>
+  <p>Welcome back, <%= user.email %>!</p>
+</div>
+<% } %> <%- include('partials/footer') %>
