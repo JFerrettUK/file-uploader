@@ -1,20 +1,47 @@
 const express = require("express");
 const session = require("express-session");
-const passport = require("./lib/passport");
-const sessionConfig = require("./lib/session");
+const passport = require("./lib/passport"); // Assuming you have passport configured
+const sessionConfig = require("./lib/session"); //And session
 const methodOverride = require("method-override");
 const path = require("path");
+const multer = require("multer"); // Import multer
+const fs = require("fs"); // Import fs
+const cloudinary = require("cloudinary").v2; // Import Cloudinary
+const { PrismaClient } = require("@prisma/client");
 
 // Load environment variables
 require("dotenv").config();
 
-// Import routes
-const authRoutes = require("./routes/auth");
-const folderRoutes = require("./routes/folders");
-const fileRoutes = require("./routes/files");
-
 const app = express();
 const port = process.env.PORT || 3000;
+const prisma = new PrismaClient();
+
+// --- Cloudinary Configuration ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// --- Create the uploads directory if it doesn't exist ---
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+// --- End of directory creation code ---
+
+// --- Multer Configuration ---
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); // Use the uploadDir variable
+  },
+  filename: function (req, file, cb) {
+    cb(null, "file-" + Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
 
 // --- EJS Configuration ---
 app.set("view engine", "ejs");
@@ -31,7 +58,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(methodOverride("_method"));
 
-// Mount routes
+// Mount routes - KEEP YOUR EXISTING ROUTES
+const authRoutes = require("./routes/auth");
+const folderRoutes = require("./routes/folders");
+const fileRoutes = require("./routes/files"); //You will edit THIS
 app.use("/", authRoutes);
 app.use("/", folderRoutes);
 app.use("/", fileRoutes);
