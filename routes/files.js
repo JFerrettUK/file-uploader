@@ -1,27 +1,32 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
-const prisma = require("../prisma");
+const { PrismaClient } = require("@prisma/client"); // Use { } for named import
 const router = express.Router();
-const cloudinary = require("../lib/cloudinary"); // Import Cloudinary config
+const cloudinary = require("cloudinary").v2; // Correct import
 const fs = require("fs");
 
+const prisma = new PrismaClient(); // Instantiate Prisma Client *here*
+
 // --- Multer Configuration ---
+// NO CHANGES HERE - the directory creation is handled in index.js
+
+// Use the __dirname-based path for uploads (defined in index.js)
+const uploadDir = path.join(__dirname, "../uploads"); // Correct relative path
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, uploadDir); // Use the uploadDir variable
   },
   filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
+    // Use originalname, but prepend a timestamp for uniqueness
+    cb(null, "file-" + Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage: storage });
 
-// --- Authentication Middleware ---
+// --- Authentication Middleware (No Changes) ---
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
@@ -29,7 +34,7 @@ function ensureAuthenticated(req, res, next) {
   res.redirect("/login");
 }
 
-// --- Upload Form Route (GET) ---
+// --- Upload Form Route (GET) (No Changes)---
 router.get("/upload-form", ensureAuthenticated, (req, res) => {
   res.render("upload", {
     isAuthenticated: req.isAuthenticated(),
@@ -44,10 +49,14 @@ router.post(
   upload.single("file"),
   async (req, res) => {
     try {
+      if (!req.file) {
+        return res.status(400).send("No file uploaded.");
+      }
+
       // 1. Upload to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "file-uploader", // Optional: Set a folder
-        resource_type: "raw", // Important for non-image/video
+        resource_type: "raw", // Important for non-image/video files
       });
       console.log("Cloudinary upload result:", result);
 
@@ -57,7 +66,7 @@ router.post(
       // 3. Save to database
       const file = await prisma.file.create({
         data: {
-          filename: req.file.originalname,
+          filename: req.file.originalname, // Use original filename
           filepath: fileUrl, // Store Cloudinary URL
           mimetype: req.file.mimetype,
           size: req.file.size,
@@ -69,9 +78,9 @@ router.post(
       // 4. Delete temporary file
       fs.unlinkSync(req.file.path);
 
-      res.send("File uploaded successfully!");
+      res.send("File uploaded successfully!"); // Or redirect as needed
     } catch (error) {
-      console.error(error);
+      console.error("Upload Error:", error); //  Log the FULL error
       res.status(500).send("Error uploading file.");
     }
   }
@@ -83,7 +92,7 @@ router.get("/files/:fileId", ensureAuthenticated, async (req, res) => {
     const fileId = parseInt(req.params.fileId);
     const file = await prisma.file.findUnique({
       where: { id: fileId },
-      include: { folder: true },
+      include: { folder: true }, // Assuming you have a folder relation
     });
 
     if (!file) {
@@ -95,12 +104,13 @@ router.get("/files/:fileId", ensureAuthenticated, async (req, res) => {
     }
 
     res.render("file", {
+      // Assuming you have a 'file.ejs' view
       file,
       isAuthenticated: req.isAuthenticated(),
       user: req.user,
     });
   } catch (error) {
-    console.error(error);
+    console.error("file details error", error);
     res.status(500).send("Error fetching file details.");
   }
 });
@@ -120,7 +130,7 @@ router.get("/download/:fileId", ensureAuthenticated, async (req, res) => {
     // Redirect directly to Cloudinary
     res.redirect(file.filepath);
   } catch (error) {
-    console.error(error);
+    console.error("Download Error", error);
     res.status(500).send("Error processing download request.");
   }
 });
@@ -145,6 +155,7 @@ router.delete("/files/:fileId", ensureAuthenticated, async (req, res) => {
     // Delete the file from Cloudinary
     if (publicId) {
       await cloudinary.uploader.destroy(`file-uploader/${publicId}`, {
+        //Added folder
         resource_type: "raw",
       });
     }
@@ -154,9 +165,9 @@ router.delete("/files/:fileId", ensureAuthenticated, async (req, res) => {
       where: { id: fileId },
     });
 
-    res.redirect("/folders"); // Redirect
+    res.redirect("/folders"); // Redirect, e.g., to a file listing
   } catch (error) {
-    console.error(error);
+    console.error("Delete Error", error);
     res.status(500).send("Error deleting file.");
   }
 });
