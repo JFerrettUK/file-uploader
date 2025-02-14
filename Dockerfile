@@ -17,5 +17,5 @@ COPY . .
 # Expose the port your app runs on
 EXPOSE 8000
 
-# Start the app (migrations are handled in the Koyeb build command)
+# Start the app 
 CMD ["npm", "run", "start"]
