@@ -1,7 +1,8 @@
 const express = require("express");
-const prisma = require("../prisma");
+const { PrismaClient } = require("@prisma/client"); // Correct import
 const router = express.Router();
 const cloudinary = require("../lib/cloudinary"); // Import Cloudinary
+const prisma = new PrismaClient(); // Instantiate Prisma Client *here*
 
 // --- Authentication Middleware ---
 function ensureAuthenticated(req, res, next) {

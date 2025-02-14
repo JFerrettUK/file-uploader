@@ -1,8 +1,10 @@
 const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
-const prisma = require("../prisma");
+const { PrismaClient } = require("@prisma/client"); // Correct import
 const router = express.Router();
+
+const prisma = new PrismaClient(); // Instantiate Prisma Client *here*
 
 // --- Registration Route ---
 router.get("/register", (req, res) => {
